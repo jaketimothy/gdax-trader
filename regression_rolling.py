@@ -6,7 +6,7 @@ import sklearn
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import mean_absolute_error, r2_score
 from sklearn.svm import SVR
-from sklearn.linear_model import ARDRegression, LinearRegression, BayesianRidge, RidgeCV, PassiveAggressiveRegressor
+from sklearn.linear_model import ARDRegression, LinearRegression, BayesianRidge, RidgeCV, PassiveAggressiveRegressor, SGDRegressor
 from sklearn.kernel_ridge import KernelRidge
 from sklearn.gaussian_process import GaussianProcessRegressor
 from sklearn.neighbors import KNeighborsRegressor
@@ -63,6 +63,21 @@ def run(column_set='raw', train_delta=False, scale=True):
 
     # gpr
     # gpr = GaussianProcessRegressor().fit(X, y)
+
+    # sgd - squared_loss
+    start_time = timeit.default_timer()
+    sgd = SGDRegressor(loss="squared_loss", random_state=123).fit(X, y)
+    print('fit sgd: %f' % (timeit.default_timer() - start_time))
+
+    # sgd - huber
+    start_time = timeit.default_timer()
+    sgd_huber = SGDRegressor(loss="huber", random_state=123).fit(X, y)
+    print('fit sgd_huber: %f' % (timeit.default_timer() - start_time))
+
+    # sgd - epsilon_insensitive - poor performer
+    # start_time = timeit.default_timer()
+    # sgd_epsi = SGDRegressor(loss="epsilon_insensitive", random_state=123).fit(X, y)
+    # print('fit sgd_epsi: %f' % (timeit.default_timer() - start_time))
 
     # ridge
     start_time = timeit.default_timer()
@@ -131,6 +146,18 @@ def run(column_set='raw', train_delta=False, scale=True):
     # y_gpr = gpr.predict(X)
 
     start_time = timeit.default_timer()
+    y_sgd = sgd.predict(X)
+    print('predict sgd: %f' % (timeit.default_timer() - start_time))
+
+    start_time = timeit.default_timer()
+    y_sgd_huber = sgd_huber.predict(X)
+    print('predict sgd_huber: %f' % (timeit.default_timer() - start_time))
+
+    # start_time = timeit.default_timer()
+    # y_sgd_epsi = sgd_epsi.predict(X)
+    # print('predict sgd_epsi: %f' % (timeit.default_timer() - start_time))
+
+    start_time = timeit.default_timer()
     y_ridge = ridge.predict(X)
     print('predict ridge: %f' % (timeit.default_timer() - start_time))
 
@@ -172,6 +199,9 @@ def run(column_set='raw', train_delta=False, scale=True):
         # y_svr_linear = y_svr_linear - test['norm close 143'].values
         # y_krr_linear = y_krr_linear - test['norm close 143'].values
         # y_gpr = gpr.predict(X) - test['norm close 143'].values
+        y_sgd = y_sgd - test['norm close 143'].values
+        y_sgd_huber = y_sgd_huber - test['norm close 143'].values
+        # y_sgd_epsi = y_sgd_epsi - test['norm close 143'].values
         y_ridge = y_ridge - test['norm close 143'].values
         y_br = y_br - test['norm close 143'].values
         # y_ard = y_ard - test['norm close 143'].values
@@ -187,6 +217,9 @@ def run(column_set='raw', train_delta=False, scale=True):
     a = [
         # y_svr_linear,
         # y_krr_linear,
+        y_sgd,
+        y_sgd_huber,
+        # y_sgd_epsi,
         y_ridge,
         y_br,
         # y_knr,
@@ -204,6 +237,9 @@ def run(column_set='raw', train_delta=False, scale=True):
     # plt.plot(x_plt, y_svr_linear, label='SVR (linear) %f' % r2_score(y, y_svr_linear))
     # plt.plot(x_plt, y_krr_linear, label='KRR (linear) %f' % r2_score(y, y_krr_linear))
     # plt.plot(x_plt, y_gpr, label='GPR %f' % r2_score(y, y_gpr))
+    plt.plot(x_plt, y_sgd, label='SGD (squared) %f' % r2_score(y, y_sgd))
+    plt.plot(x_plt, y_sgd_huber, label='SGD (huber) %f' % r2_score(y, y_sgd_huber))
+    # plt.plot(x_plt, y_sgd_epsi, label='SGD (epsi) %f' % r2_score(y, y_sgd_epsi))
     plt.plot(x_plt, y_ridge, label='Ridge %f' % r2_score(y, y_ridge))
     plt.plot(x_plt, y_br, label='BR %f' % r2_score(y, y_br))
     # plt.plot(x_plt, y_ard, label='ARD %f' % r2_score(y, y_ard))
